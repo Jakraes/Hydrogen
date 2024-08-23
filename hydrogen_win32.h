@@ -40,12 +40,12 @@ SOFTWARE.
 
 typedef enum Hydrogen_Color {
     Black,
-    Red,
-    Green,
-    Yellow,
     Blue,
-    Magenta,
+    Green,
     Cyan,
+    Red,
+    Magenta,
+    Yellow,
     White
 } Hydrogen_Color;
 
@@ -58,8 +58,8 @@ typedef enum Hydrogen_Color_Mode {
 // -- Config -- //
 
 uint8_t* hydrogen_config_title = "Hydrogen Terminal";
-uint8_t hydrogen_config_viewport_width = 80;
-uint8_t hydrogen_config_viewport_height = 25;
+uint8_t hydrogen_config_viewport_width = 120;
+uint8_t hydrogen_config_viewport_height = 30;
 bool hydrogen_config_cursor_hidden = true; 
 bool hydrogen_config_blocking_input = true;
 
@@ -151,8 +151,8 @@ void hydrogen_terminate() {
  */
 void hydrogen_refresh() {
     COORD coord = { 0, 0 };
-    SMALL_RECT rect = { 0, 0, hydrogen_config_viewport_height - 1, hydrogen_config_viewport_width - 1 };
-    WriteConsoleOutput(_hydrogen_console, _hydrogen_stdout_buffer, (COORD) { hydrogen_config_viewport_height, hydrogen_config_viewport_width }, coord, &rect);
+    SMALL_RECT rect = { 0, 0, hydrogen_config_viewport_width - 1, hydrogen_config_viewport_height - 1 };
+    WriteConsoleOutput(_hydrogen_console, _hydrogen_stdout_buffer, (COORD) { hydrogen_config_viewport_width, hydrogen_config_viewport_height }, coord, &rect);
 }
 
 /**
@@ -164,8 +164,9 @@ void hydrogen_refresh() {
 void hydrogen_clear() {
     for (int y = 0; y < hydrogen_config_viewport_height; y++) {
         for (int x = 0; x < hydrogen_config_viewport_width; x++) {
-            _hydrogen_stdout_buffer[y * hydrogen_config_viewport_height + x].Char.AsciiChar = '\0';
-            _hydrogen_stdout_buffer[y * hydrogen_config_viewport_height + x].Attributes = White | Normal | (Black << 4) | (Normal << 4);
+            // WHY DOES IT WORK LIKE THIS, WHY AM I MULTIPLYING Y BY THE WIDTH????????? 
+            _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Char.AsciiChar = '\0';
+            _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Attributes = White | Normal | (Black << 4) | (Normal << 4);
         }
     }
 }
@@ -197,10 +198,9 @@ void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen
  * @return None
  */
 void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch) {
-    if (x >= hydrogen_config_viewport_width || y >= hydrogen_config_viewport_height) return;
-
-    _hydrogen_stdout_buffer[y * hydrogen_config_viewport_height + x].Char.AsciiChar = ch;
-    _hydrogen_stdout_buffer[y * hydrogen_config_viewport_height + x].Attributes = _hydrogen_current_fg_color | _hydrogen_current_fg_mode | (_hydrogen_current_bg_color << 4) | (_hydrogen_current_bg_mode << 4);
+    // IT'S THE SAME HERE, I DON'T UNDERSTAND WHY IT ONLY WORKS LIKE THIS, SEND HELP
+    _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Char.AsciiChar = ch;
+    _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Attributes = _hydrogen_current_fg_color | _hydrogen_current_fg_mode | (_hydrogen_current_bg_color << 4) | (_hydrogen_current_bg_mode << 4);
 }
 
 /**
