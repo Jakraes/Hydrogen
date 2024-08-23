@@ -238,6 +238,17 @@ void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...) {
     hydrogen_put_str(x, y, (const uint8_t*)formatted_str);
 }
 
+/**
+ * Draws a box on the console at the specified coordinates.
+ * 
+ * @param x The x-coordinate of the top-left corner of the box.
+ * @param y The y-coordinate of the top-left corner of the box.
+ * @param width The width of the box.
+ * @param height The height of the box.
+ * @param double_line Whether to use double lines for the box border.
+ * 
+ * @return None
+ */
 void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool double_line) {
     if (double_line) {
         for (int i = y; i < y + height; i++) {
