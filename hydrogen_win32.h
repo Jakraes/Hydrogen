@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <windows.h>
 #include <conio.h>
 
@@ -35,13 +37,6 @@ SOFTWARE.
 // -------------------------------------------------------- //
 
 // -- Types -- //
-
-typedef unsigned char Hydrogen_Byte;
-
-typedef enum Hydrogen_Bool {
-    False,
-    True
-} Hydrogen_Bool;
 
 typedef enum Hydrogen_Color {
     Black,
@@ -62,11 +57,11 @@ typedef enum Hydrogen_Color_Mode {
 
 // -- Config -- //
 
-Hydrogen_Byte* hydrogen_config_title = "Hydrogen Terminal";
-Hydrogen_Byte hydrogen_config_viewport_width = 80;
-Hydrogen_Byte hydrogen_config_viewport_height = 25;
-Hydrogen_Bool hydrogen_config_cursor_hidden = True; 
-Hydrogen_Bool hydrogen_config_blocking_input = True;
+uint8_t* hydrogen_config_title = "Hydrogen Terminal";
+uint8_t hydrogen_config_viewport_width = 80;
+uint8_t hydrogen_config_viewport_height = 25;
+bool hydrogen_config_cursor_hidden = true; 
+bool hydrogen_config_blocking_input = true;
 
 
 // -- Internal -- //
@@ -77,7 +72,7 @@ Hydrogen_Color _hydrogen_current_fg_color;
 Hydrogen_Color _hydrogen_current_bg_color;
 Hydrogen_Color_Mode _hydrogen_current_fg_mode;
 Hydrogen_Color_Mode _hydrogen_current_bg_mode;
-Hydrogen_Byte _hydrogen_current_key;
+uint8_t _hydrogen_current_key;
 HANDLE _hydrogen_input_thread;
 
 
@@ -91,12 +86,13 @@ void hydrogen_clear();
 
 void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen_Color bg, Hydrogen_Color_Mode bg_mode);
 
-void hydrogen_put_char(Hydrogen_Byte x, Hydrogen_Byte y, Hydrogen_Byte ch);
-void hydrogen_put_str(Hydrogen_Byte x, Hydrogen_Byte y, const Hydrogen_Byte* str);
-void hydrogen_put_str_fmt(Hydrogen_Byte x, Hydrogen_Byte y, const Hydrogen_Byte* str, ...);
+void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch);
+void hydrogen_put_str(uint8_t x, uint8_t y, const uint8_t* str);
+void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...);
+void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool double_line);
 
 DWORD WINAPI _hydrogen_input_thread_func(LPVOID param);
-Hydrogen_Byte hydrogen_get_key();
+uint8_t hydrogen_get_key();
 
 
 // -------------------------------------------------------- //
@@ -200,7 +196,9 @@ void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen
  *
  * @return None
  */
-void hydrogen_put_char(Hydrogen_Byte x, Hydrogen_Byte y, Hydrogen_Byte ch) {
+void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch) {
+    if (x >= hydrogen_config_viewport_width || y >= hydrogen_config_viewport_height) return;
+
     _hydrogen_stdout_buffer[y * hydrogen_config_viewport_height + x].Char.AsciiChar = ch;
     _hydrogen_stdout_buffer[y * hydrogen_config_viewport_height + x].Attributes = _hydrogen_current_fg_color | _hydrogen_current_fg_mode | (_hydrogen_current_bg_color << 4) | (_hydrogen_current_bg_mode << 4);
 }
@@ -214,7 +212,7 @@ void hydrogen_put_char(Hydrogen_Byte x, Hydrogen_Byte y, Hydrogen_Byte ch) {
  * 
  * @return None
  */
-void hydrogen_put_str(Hydrogen_Byte x, Hydrogen_Byte y, const Hydrogen_Byte* str) {
+void hydrogen_put_str(uint8_t x, uint8_t y, const uint8_t* str) {
     for (int i = 0; str[i] != '\0'; i++) {
         hydrogen_put_char(x + i, y, str[i]);
     }
@@ -230,15 +228,50 @@ void hydrogen_put_str(Hydrogen_Byte x, Hydrogen_Byte y, const Hydrogen_Byte* str
  * 
  * @return None
  */
-void hydrogen_put_str_fmt(Hydrogen_Byte x, Hydrogen_Byte y, const Hydrogen_Byte* str, ...) {
+void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...) {
     va_list args;
     va_start(args, str);
     char formatted_str[256];
     vsnprintf(formatted_str, 256, str, args);
     va_end(args);
 
-    hydrogen_put_str(x, y, (const Hydrogen_Byte*)formatted_str);
+    hydrogen_put_str(x, y, (const uint8_t*)formatted_str);
 }
+
+void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool double_line) {
+    if (double_line) {
+        for (int i = y; i < y + height; i++) {
+            hydrogen_put_char(x, i, 186);
+            hydrogen_put_char(x + width - 1, i, 186);
+        }
+
+        for (int i = x; i < x + width; i++) {
+            hydrogen_put_char(i, y, 205);
+            hydrogen_put_char(i, y + height - 1, 205);
+        }
+
+        hydrogen_put_char(x, y, 201);
+        hydrogen_put_char(x + width - 1, y, 187);
+        hydrogen_put_char(x, y + height - 1, 200);
+        hydrogen_put_char(x + width - 1, y + height - 1, 188);
+    } else {
+        for (int i = y; i < y + height; i++) {
+            hydrogen_put_char(x, i, 179);
+            hydrogen_put_char(x + width - 1, i, 179);
+        }
+
+        for (int i = x; i < x + width; i++) {
+            hydrogen_put_char(i, y, 196);
+            hydrogen_put_char(i, y + height - 1, 196);
+        }
+
+        hydrogen_put_char(x, y, 218);
+        hydrogen_put_char(x + width - 1, y, 191);
+        hydrogen_put_char(x, y + height - 1, 192);
+        hydrogen_put_char(x + width - 1, y + height - 1, 217);
+    }
+}
+
 
 /**
  * The input thread function for Hydrogen.
@@ -263,7 +296,7 @@ DWORD WINAPI _hydrogen_input_thread_func(LPVOID param) {
  *
  * @return The current key pressed by the user.
  */
-Hydrogen_Byte hydrogen_get_key() {
+uint8_t hydrogen_get_key() {
     if (hydrogen_config_blocking_input) {
         _hydrogen_current_key = _getch();
     }

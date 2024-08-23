@@ -3,7 +3,7 @@
 int main() {
     hydrogen_config_title = "Hello World!";
     // hydrogen_config_blocking_input = True;
-    hydrogen_config_blocking_input = False;
+    hydrogen_config_blocking_input = false;
 
     hydrogen_init();
 
@@ -12,7 +12,7 @@ int main() {
     do {
         hydrogen_clear();
 
-        Hydrogen_Byte key = hydrogen_get_key();
+        uint8_t key = hydrogen_get_key();
 
         hydrogen_put_str_fmt(0, 0, "Current key: %c", key);
 
