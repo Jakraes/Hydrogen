@@ -32,6 +32,7 @@ SOFTWARE.
 #include <windows.h>
 #include <conio.h>
 
+
 // -------------------------------------------------------- //
 //                       Declarations                       //
 // -------------------------------------------------------- //
@@ -57,43 +58,46 @@ typedef enum Hydrogen_Color_Mode {
 
 // -- Config -- //
 
-uint8_t* hydrogen_config_title = "Hydrogen Terminal";
-uint8_t hydrogen_config_viewport_width = 120;
-uint8_t hydrogen_config_viewport_height = 30;
-bool hydrogen_config_cursor_hidden = true; 
-bool hydrogen_config_blocking_input = true;
+static uint8_t* hydrogen_config_title = "Hydrogen Terminal";
+static uint8_t hydrogen_config_viewport_width = 120;
+static uint8_t hydrogen_config_viewport_height = 30;
+static bool hydrogen_config_cursor_hidden = true; 
+static bool hydrogen_config_blocking_input = true;
 
 
 // -- Internal -- //
 
-HANDLE _hydrogen_console;
-CHAR_INFO* _hydrogen_stdout_buffer;
-Hydrogen_Color _hydrogen_current_fg_color;
-Hydrogen_Color _hydrogen_current_bg_color;
-Hydrogen_Color_Mode _hydrogen_current_fg_mode;
-Hydrogen_Color_Mode _hydrogen_current_bg_mode;
-uint8_t _hydrogen_current_key;
-HANDLE _hydrogen_input_thread;
+static HANDLE _hydrogen_console;
+static CHAR_INFO* _hydrogen_stdout_buffer;
+static Hydrogen_Color _hydrogen_current_fg_color;
+static Hydrogen_Color _hydrogen_current_bg_color;
+static Hydrogen_Color_Mode _hydrogen_current_fg_mode;
+static Hydrogen_Color_Mode _hydrogen_current_bg_mode;
+static uint8_t _hydrogen_current_key;
+static HANDLE _hydrogen_input_thread;
 
 
 // -- Functions -- //
 
-void hydrogen_init();
-void hydrogen_terminate();
+static void hydrogen_init();
+static void hydrogen_terminate();
 
-void hydrogen_refresh();
-void hydrogen_clear();
+static void hydrogen_refresh();
+static void hydrogen_clear();
 
-void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen_Color bg, Hydrogen_Color_Mode bg_mode);
+static void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen_Color bg, Hydrogen_Color_Mode bg_mode);
 
-void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch);
-void hydrogen_put_str(uint8_t x, uint8_t y, const uint8_t* str);
-void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...);
-void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool double_line);
+static void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch);
+static void hydrogen_put_str(uint8_t x, uint8_t y, const uint8_t* str);
+static void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...);
+static void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool double_line);
 
-DWORD WINAPI _hydrogen_input_thread_func(LPVOID param);
-uint8_t hydrogen_get_key();
+static DWORD WINAPI _hydrogen_input_thread_func(LPVOID param);
+static uint8_t hydrogen_get_key();
 
+#endif
+
+#ifdef HYDROGEN_TERM_WIN32_SRC
 
 // -------------------------------------------------------- //
 //                      Implementations                     //
@@ -105,7 +109,7 @@ uint8_t hydrogen_get_key();
  * 
  * @return None
  */
-void hydrogen_init() {
+static void hydrogen_init() {
     _hydrogen_console = GetStdHandle(STD_OUTPUT_HANDLE);
     
     _hydrogen_stdout_buffer = malloc(hydrogen_config_viewport_width * hydrogen_config_viewport_height * sizeof(CHAR_INFO));
@@ -135,7 +139,7 @@ void hydrogen_init() {
  * 
  * @return None
  */
-void hydrogen_terminate() {
+static void hydrogen_terminate() {
     free(_hydrogen_stdout_buffer);
 
     if (!hydrogen_config_blocking_input) {
@@ -149,7 +153,7 @@ void hydrogen_terminate() {
  * 
  * @return None
  */
-void hydrogen_refresh() {
+static void hydrogen_refresh() {
     COORD coord = { 0, 0 };
     SMALL_RECT rect = { 0, 0, hydrogen_config_viewport_width - 1, hydrogen_config_viewport_height - 1 };
     WriteConsoleOutput(_hydrogen_console, _hydrogen_stdout_buffer, (COORD) { hydrogen_config_viewport_width, hydrogen_config_viewport_height }, coord, &rect);
@@ -161,7 +165,7 @@ void hydrogen_refresh() {
  *
  * @return None
  */
-void hydrogen_clear() {
+static void hydrogen_clear() {
     for (int y = 0; y < hydrogen_config_viewport_height; y++) {
         for (int x = 0; x < hydrogen_config_viewport_width; x++) {
             // WHY DOES IT WORK LIKE THIS, WHY AM I MULTIPLYING Y BY THE WIDTH????????? 
@@ -181,7 +185,7 @@ void hydrogen_clear() {
  *
  * @return None
  */
-void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen_Color bg, Hydrogen_Color_Mode bg_mode) {
+static void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen_Color bg, Hydrogen_Color_Mode bg_mode) {
     _hydrogen_current_fg_color = fg;
     _hydrogen_current_fg_mode = fg_mode;
     _hydrogen_current_bg_color = bg;
@@ -197,7 +201,7 @@ void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen
  *
  * @return None
  */
-void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch) {
+static void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch) {
     // IT'S THE SAME HERE, I DON'T UNDERSTAND WHY IT ONLY WORKS LIKE THIS, SEND HELP
     _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Char.AsciiChar = ch;
     _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Attributes = _hydrogen_current_fg_color | _hydrogen_current_fg_mode | (_hydrogen_current_bg_color << 4) | (_hydrogen_current_bg_mode << 4);
@@ -212,7 +216,7 @@ void hydrogen_put_char(uint8_t x, uint8_t y, uint8_t ch) {
  * 
  * @return None
  */
-void hydrogen_put_str(uint8_t x, uint8_t y, const uint8_t* str) {
+static void hydrogen_put_str(uint8_t x, uint8_t y, const uint8_t* str) {
     for (int i = 0; str[i] != '\0'; i++) {
         hydrogen_put_char(x + i, y, str[i]);
     }
@@ -228,7 +232,7 @@ void hydrogen_put_str(uint8_t x, uint8_t y, const uint8_t* str) {
  * 
  * @return None
  */
-void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...) {
+static void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...) {
     va_list args;
     va_start(args, str);
     char formatted_str[256];
@@ -249,7 +253,7 @@ void hydrogen_put_str_fmt(uint8_t x, uint8_t y, const uint8_t* str, ...) {
  * 
  * @return None
  */
-void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool double_line) {
+static void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool double_line) {
     if (double_line) {
         for (int i = y; i < y + height; i++) {
             hydrogen_put_char(x, i, 186);
@@ -293,7 +297,7 @@ void hydrogen_put_box(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool 
  * 
  * @return The thread exit status, currently always 0.
  */
-DWORD WINAPI _hydrogen_input_thread_func(LPVOID param) {
+static DWORD WINAPI _hydrogen_input_thread_func(LPVOID param) {
     while (1) {
         _hydrogen_current_key = _getch();
         Sleep(1);
@@ -307,7 +311,7 @@ DWORD WINAPI _hydrogen_input_thread_func(LPVOID param) {
  *
  * @return The current key pressed by the user.
  */
-uint8_t hydrogen_get_key() {
+static uint8_t hydrogen_get_key() {
     if (hydrogen_config_blocking_input) {
         _hydrogen_current_key = _getch();
     }
