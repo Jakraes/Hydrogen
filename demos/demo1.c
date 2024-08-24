@@ -1,4 +1,6 @@
+#define HYDROGEN_TERM_WIN32_SRC
 #include "../hydrogen_win32.h"
+
 
 int main() {
     hydrogen_config_title = "Hello World!";
