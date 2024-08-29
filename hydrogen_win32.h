@@ -84,6 +84,7 @@ static void hydrogen_terminate();
 
 static void hydrogen_refresh();
 static void hydrogen_clear();
+static void hydrogen_clear_area(uint8_t x, uint8_t y, uint8_t width, uint8_t height);
 
 static void hydrogen_set_color(Hydrogen_Color fg, Hydrogen_Color_Mode fg_mode, Hydrogen_Color bg, Hydrogen_Color_Mode bg_mode);
 
@@ -171,6 +172,27 @@ static void hydrogen_clear() {
             // WHY DOES IT WORK LIKE THIS, WHY AM I MULTIPLYING Y BY THE WIDTH????????? 
             _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Char.AsciiChar = '\0';
             _hydrogen_stdout_buffer[y * hydrogen_config_viewport_width + x].Attributes = White | Normal | (Black << 4) | (Normal << 4);
+        }
+    }
+}
+
+
+/**
+ * Clears a rectangular area of the console by setting all characters to null 
+ * and resetting the foreground and background colors to their default values.
+ * 
+ * @param x The x-coordinate of the top-left corner of the area to be cleared.
+ * @param y The y-coordinate of the top-left corner of the area to be cleared.
+ * @param width The width of the area to be cleared.
+ * @param height The height of the area to be cleared.
+ * 
+ * @return None
+ */
+static void hydrogen_clear_area(uint8_t x, uint8_t y, uint8_t width, uint8_t height) {
+    for (int i = x; i < x + width; i++) {
+        for (int j = y; j < y + height; j++) {
+            _hydrogen_stdout_buffer[j * hydrogen_config_viewport_width + i].Char.AsciiChar = '\0';
+            _hydrogen_stdout_buffer[j * hydrogen_config_viewport_width + i].Attributes = White | Normal | (Black << 4) | (Normal << 4);
         }
     }
 }

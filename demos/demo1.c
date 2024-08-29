@@ -4,8 +4,8 @@
 
 int main() {
     hydrogen_config_title = "Hello World!";
-    // hydrogen_config_blocking_input = True;
-    hydrogen_config_blocking_input = false;
+    hydrogen_config_blocking_input = true;
+    // hydrogen_config_blocking_input = false;
 
     hydrogen_init();
 
@@ -16,7 +16,7 @@ int main() {
 
         uint8_t key = hydrogen_get_key();
 
-        hydrogen_put_str_fmt(0, 0, "Current key: %c", key);
+        hydrogen_put_str_fmt(0, 0, "Current key: %c %d", key, key);
 
         hydrogen_put_str_fmt(0, 1, "Counter: %d", counter++);
 
