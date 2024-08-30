@@ -141,12 +141,20 @@ static void hydrogen_init() {
  * @return None
  */
 static void hydrogen_terminate() {
+    hydrogen_clear();
+    hydrogen_refresh();
+
     free(_hydrogen_stdout_buffer);
 
     if (!hydrogen_config_blocking_input) {
         TerminateThread(_hydrogen_input_thread, 0);
         CloseHandle(_hydrogen_input_thread);
     }
+
+    CONSOLE_CURSOR_INFO cursor_info = { 1, 1 };
+    SetConsoleCursorInfo(_hydrogen_console, &cursor_info);
+
+    SetConsoleCursorPosition(_hydrogen_console, (COORD) { 0, 0 });
 }
 
 /**
